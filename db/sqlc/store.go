@@ -8,8 +8,8 @@ import (
 
 // Store provides all functions to execute db queries and transactions
 type Store struct {
-	*Queries
-	db *sql.DB
+	*Queries // composition: extend struct  functionality
+	db       *sql.DB
 }
 
 // NewStore: creates a new Store
