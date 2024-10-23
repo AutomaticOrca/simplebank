@@ -1,6 +1,64 @@
 ## Section 1: Working with database
 
-### 4. Use Docker + Postgres + TablePlus to create DB scheme
+### 1. Design DB schema and generate SQL code
+
+Table `accounts`: 
+
+Table `entries`: record all changes to the account balance.
+
+Table `transfers`: records all the money transfers between 2 accounts
+
+[dbDiagram]: https://dbdiagram.io/d/simplebank-670e279197a66db9a3036bd7
+
+```postgresql
+# Postgre
+CREATE TABLE "accounts" (
+  "id" bigserial PRIMARY KEY,
+  "owner" varchar NOT NULL,
+  "balance" bigint NOT NULL,
+  "currency" varchar NOT NULL,
+  "created_at" timestamptz NOT NULL DEFAULT (now())
+);
+
+CREATE TABLE "entries" (
+  "id" bigserial PRIMARY KEY,
+  "account_id" bigint NOT NULL,
+  "amount" bigint NOT NULL,
+  "created_at" timestamptz NOT NULL DEFAULT (now())
+);
+
+CREATE TABLE "transfers" (
+  "id" bigserial PRIMARY KEY,
+  "from_account_id" bigint NOT NULL,
+  "to_account_id" bigint NOT NULL,
+  "amount" bigint NOT NULL,
+  "created_at" timestamptz NOT NULL DEFAULT (now())
+);
+
+ALTER TABLE "entries" ADD FOREIGN KEY ("account_id") REFERENCES "accounts" ("id");
+
+ALTER TABLE "transfers" ADD FOREIGN KEY ("from_account_id") REFERENCES "accounts" ("id");
+
+ALTER TABLE "transfers" ADD FOREIGN KEY ("to_account_id") REFERENCES "accounts" ("id");
+
+CREATE INDEX ON "accounts" ("owner");
+
+CREATE INDEX ON "entries" ("account_id");
+
+CREATE INDEX ON "transfers" ("from_account_id");
+
+CREATE INDEX ON "transfers" ("to_account_id");
+
+CREATE INDEX ON "transfers" ("from_account_id", "to_account_id");
+
+COMMENT ON COLUMN "entries"."amount" IS 'can be negative or positive';
+
+COMMENT ON COLUMN "transfers"."amount" IS 'must be positive';
+```
+
+
+
+### 4. Docker + Postgres + TablePlus to create DB scheme
 
 ```shell
 # Pull an image
@@ -54,7 +112,7 @@ $ docker --help
 
 
 
-### 5. How to write & run database migration in Golang
+### 5. database migration
 
 `brew install golang-migrate`
 
@@ -139,7 +197,7 @@ migratedown:
 
 
 
-6. ### Generate CRUD Golang code from SQL | Compare db/sql, gorm, sqlx & sqlc
+### 6. Generate CRUD Golang code from SQL
 
 sqlc SQL => Go
 
@@ -216,8 +274,56 @@ Methods with pointer receivers can **<u>modify the value</u> to which the receiv
 
 
 
-### 5. A clean way to implement db transaction in Golang
+7.
 
-Every unit test function in Go must start with the `Test` prefix (with uppercase letter T) and takes a `testing.T` object as input.
+https://pkg.go.dev/testing
 
-store: provides all function to execute db queries and transactions
+
+
+lib/bq
+
+stretchr/testify
+
+
+
+Main_test.go
+
+
+
+Account_test.go
+
+
+
+random.go
+
+UnixNano()
+
+Int63n
+
+
+
+
+
+### 8. Implement db transaction in Golang
+
+Composition
+
+```go
+type Store struct {
+    *Queries // Composition: Embeds Queries struct for single-table query operations
+    db       *sql.DB // Database connection used to manage transactions and connection pool
+}
+```
+
+
+
+
+
+# Helpful Links
+
+[Go in Visual Studio Code]: https://code.visualstudio.com/docs/languages/go
+
+
+
+# A Tour of Go
+
