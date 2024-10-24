@@ -319,9 +319,7 @@ type Store struct {
 
 
 
-9.
-
-
+### 9. DB transaction lock & Handle deadlock
 
 Query with Lock
 
@@ -353,7 +351,104 @@ Deadlock
 
 
 
+### 10. avoid deadlock in DB transaction: Queries order
 
+
+
+### 11 Transaction isolation levels & read phenomena
+
+ACID Property
+
+
+
+
+
+**4 Read Phenomena**
+
+-  `dirty read` phenomenon. It happens when a transaction reads data written by <u>other concurrent transaction that has not been committed yet</u>. This is terribly bad, because we don’t know if that other transaction will eventually be committed or rolled back. So we might end up using incorrect data in case rollback occurs.
+-  `non-repeatable read`. When a transaction <u>reads the same record twice and see different values</u>, because the *row has been modified by other transaction* that was committed after the first read.
+- `Phantom read` is a similar phenomenon, but affects queries that search for <u>multiple rows</u> instead of one. In this case, <u>the same query is re-executed, but a different set of rows is returned</u>, due to some changes made by other recently-committed transactions, such as inserting new rows or deleting existing rows which happen to satisfy the search condition of current transaction’s query.
+-  `serialization anomaly`. It’s when the result of a group of concurrent committed transactions could not be achieved if we try to run them sequentially <u>in any order</u> without overlapping each other.
+
+
+
+**4 isolation levels**
+
+-  `read uncommitted`. Transactions in this level can <u>see data written by other uncommitted transactions</u>, thus allowing `dirty read` phenomenon to happen.
+-  `read committed`, where transactions can <u>only see data that has been committed by other transactions</u>. Because of this, `dirty read` is no longer possible.
+-  `repeatable read` isolation level. It ensures that the <u>same select query will always return the same result</u>, no matter how many times it is executed, even if some other concurrent transactions have committed new changes that satisfy the query. `phantom read` phenomenon is also prevented in this `repeatable-read` isolation level
+- `serializable`. Concurrent transactions running in this level are guaranteed to be able to yield the same result as if they’re executed sequentially in some order, one after another without overlapping. So basically it means that there exists at least 1 way to order these concurrent transactions so that if we run them one by one, the final result will be the same.
+
+​	(transaction 1, transaction 2; if t1 accounts1.balance -1, the update query will be blocked because  t2 is blocking this update query in t1)
+
+
+
+### 12 Github Actions for Golang + Postgres to run automated tests
+
+
+
+**Workflow**
+
+Workflow is basically an automated procedure that’s made up of one or more jobs. It can be triggered by 3 different ways:
+
+- By an event that happens on the Github repository
+- By setting a repetitive schedule
+- Or manually clicking on the run workflow button on the repository UI.
+
+
+
+`.yml` to `.github/workflows`
+
+**Runner**
+
+A runner is simply a server that listens for available jobs, and it will run only 1 job at a time.
+
+The runners will run the jobs, then report the their progress, logs, and results back to Github, so we can easily check it on the UI of the repository.
+
+```yml
+jobs:
+  build:
+    runs-on: ubuntu-latest
+```
+
+----------
+
+**Job**
+
+A job is a set of steps that will be executed on the same runner.
+
+
+
+The jobs are listed inside the workflow under the `jobs` keyword.
+
+```yml
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+      - name: Build server
+        run: ./build_server.sh
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - run: ./test_server.sh
+```
+
+-----------
+
+**Steps**
+
+
+
+```
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+```
 
 
 
