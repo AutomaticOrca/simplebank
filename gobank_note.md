@@ -452,6 +452,24 @@ jobs:
 
 
 
+
+
+
+
+# Section2: Building RESTful HTTP JSON API
+
+### 13. RESTful API using Gin
+
+
+
+### 14. Loading config with Viper
+
+https://github.com/uber-go/mock
+
+
+
+
+
 # Helpful Links
 
 [Go in Visual Studio Code]: https://code.visualstudio.com/docs/languages/go
