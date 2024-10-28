@@ -15,24 +15,26 @@ func TestCreateAccount(t *testing.T) {
 }
 
 func createRandomAccount(t *testing.T) Account {
+	user := createRandomUser(t)
+
 	arg := CreateAccountParams{
-		Owner:    util.RandomOwner(),
+		Owner:    user.Username,
 		Balance:  util.RandomMoney(),
 		Currency: util.RandomCurrency(),
-}
+	}
 
-account, err := testQueries.CreateAccount(context.Background(), arg)
-require.NoError(t, err)
-require.NotEmpty(t, account)
+	account, err := testQueries.CreateAccount(context.Background(), arg)
+	require.NoError(t, err)
+	require.NotEmpty(t, account)
 
-require.Equal(t, arg.Owner, account.Owner)
-require.Equal(t, arg.Balance, account.Balance)
-require.Equal(t, arg.Currency, account.Currency)
+	require.Equal(t, arg.Owner, account.Owner)
+	require.Equal(t, arg.Balance, account.Balance)
+	require.Equal(t, arg.Currency, account.Currency)
 
-require.NotZero(t, account.ID)
-require.NotZero(t, account.CreatedAt)
+	require.NotZero(t, account.ID)
+	require.NotZero(t, account.CreatedAt)
 
-return account
+	return account
 }
 
 func TestGetAccount(t *testing.T) {
@@ -52,8 +54,8 @@ func TestUpdateAccount(t *testing.T) {
 	account1 := createRandomAccount(t)
 
 	arg := UpdateAccountParams{
-			ID:      account1.ID,
-			Balance: util.RandomMoney(),
+		ID:      account1.ID,
+		Balance: util.RandomMoney(),
 	}
 
 	err := testQueries.UpdateAccount(context.Background(), arg)
@@ -73,12 +75,12 @@ func TestDeleteAccount(t *testing.T) {
 
 func TestListAccounts(t *testing.T) {
 	for i := 0; i < 10; i++ {
-			createRandomAccount(t)
+		createRandomAccount(t)
 	}
 
 	arg := ListAccountsParams{
-			Limit:  5,
-			Offset: 5,
+		Limit:  5,
+		Offset: 5,
 	}
 
 	accounts, err := testQueries.ListAccounts(context.Background(), arg)
@@ -86,6 +88,6 @@ func TestListAccounts(t *testing.T) {
 	require.Len(t, accounts, 5)
 
 	for _, account := range accounts {
-			require.NotEmpty(t, account)
+		require.NotEmpty(t, account)
 	}
 }
