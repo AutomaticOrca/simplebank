@@ -632,6 +632,59 @@ func TestCreateUserAPI(t *testing.T) {
 
 
 
+# Section 3: Deploying the app to production (docker + kubernetes + aws)
+
+
+
+how to build a minimal docker golang container
+
+```dockerfile
+# Build stage
+FROM golang:1.23-alpine3.20 AS builder
+WORKDIR /app
+COPY . .
+RUN go build -o main main.go
+
+# Run stage
+FROM alpine:3.20
+WORKDIR /app
+COPY --from=builder /app/main .
+
+EXPOSE 8080
+CMD [ "/app/main" ]
+```
+
+
+
+```shell
+docker images
+docker rmi f312ac8a88e6
+docker rm simplebank
+```
+
+
+
+Use docker network to connect 2 stand-alone containers
+
+```shell
+docker run --name simplebank -p 8080:8080 -e GIN_MODE=release simplebank:latest 
+docker ps
+docker container inspect postgres12
+
+docker network create bank-network
+
+docker network connect bank-network postgres12
+
+docker run --name simplebank --network bank-network -p 8080:8080 -e GIN_MODE=release -e DB_SOURCE="postgresql://root:secret@postgres12:5432/simple_bank?sslmode=disable" simplebank:latest
+
+
+
+```
+
+
+
+
+
 # Helpful Links
 
 [Go in Visual Studio Code]: https://code.visualstudio.com/docs/languages/go
