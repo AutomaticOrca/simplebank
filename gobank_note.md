@@ -692,6 +692,23 @@ https://docs.docker.com/reference/compose-file/
 
 
 
+```
+# 
+docker pull 767398022207.dkr.ecr.ap-southeast-2.amazonaws.com/commonrich:ae8ca3fcda68c7800ea631fbc930abd504735020
+
+# aws ecr get login password
+aws ecr get-login-password | docker login --username AWS --password-stdin 767398022207.dkr.ecr.ap-southeast-2.amazonaws.com
+
+# put this command to start.sh
+source app.env
+
+docker run ...
+```
+
+
+
+
+
 # Helpful Links
 
 [Go in Visual Studio Code]: https://code.visualstudio.com/docs/languages/go
