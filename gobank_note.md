@@ -140,7 +140,7 @@ docker start postgres12
 docker exec -it postgres12 /bin/sh
 
 # without shell: access the database console without going through the container shell
-docker exec -it postgres12 psql -U root simplebook
+docker exec -it postgres12 psql -U root simplebank
 ```
 
 
@@ -678,8 +678,15 @@ docker network connect bank-network postgres12
 docker run --name simplebank --network bank-network -p 8080:8080 -e GIN_MODE=release -e DB_SOURCE="postgresql://root:secret@postgres12:5432/simple_bank?sslmode=disable" simplebank:latest
 
 
+# update our docker image to run db migration before starting the api server
 
 ```
+
+
+
+docker compose
+
+https://docs.docker.com/reference/compose-file/
 
 
 
