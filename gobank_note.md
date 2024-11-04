@@ -2,7 +2,7 @@
 
 ### 1. Design DB schema and generate SQL code
 
-Table `accounts`: 
+Table `accounts`:
 
 Table `entries`: record all changes to the account balance.
 
@@ -56,8 +56,6 @@ COMMENT ON COLUMN "entries"."amount" IS 'can be negative or positive';
 COMMENT ON COLUMN "transfers"."amount" IS 'must be positive';
 ```
 
-
-
 ### 4. Docker + Postgres + TablePlus to create DB scheme
 
 ```shell
@@ -86,14 +84,12 @@ docker exec -it postgres12 psql -U root
 >
 > Execute a command in a running container
 >
-> -u, --user string     Username or UID
+> -u, --user string Username or UID
 
 ```shell
 # View container logs
 docker logs <container_name_or_id>
 ```
-
-
 
 Docker common commands:
 
@@ -102,15 +98,13 @@ $ docker --help
 ```
 
 > Common Commands:
->   run	 Create and run a new container from an image
->   exec       Execute a command in a running container
->   ps           List containers
->   build      Build an image from a Dockerfile
->   pull        Download an image from a registry
->   push      Upload an image to a registry
->   images  List images
-
-
+> run Create and run a new container from an image
+> exec Execute a command in a running container
+> ps List containers
+> build Build an image from a Dockerfile
+> pull Download an image from a registry
+> push Upload an image to a registry
+> images List images
 
 ### 5. database migration
 
@@ -118,11 +112,9 @@ $ docker --help
 
 **Up/Down migration**
 
-Up: make a forward change to the schema 		OLD => NEW
+Up: make a forward change to the schema OLD => NEW
 
-Down: revert the change, rollback				NEW => OLD
-
-
+Down: revert the change, rollback NEW => OLD
 
 **Check postgres container status**
 
@@ -132,7 +124,7 @@ docker ps
 docker stop postgres12
 
 # list all containers regardless of their running status
-docker ps -a 
+docker ps -a
 
 docker start postgres12
 
@@ -143,8 +135,6 @@ docker exec -it postgres12 /bin/sh
 docker exec -it postgres12 psql -U root simplebank
 ```
 
-
-
 **Create/drop database**
 
 ```shell
@@ -153,10 +143,8 @@ createdb --username=root --owner=root simple_bank
 drop simple_bank
 
 # create/drop database outside postgres container
-docker exec -it postgres12 createdb --username=root --owner=root simple_bank 
+docker exec -it postgres12 createdb --username=root --owner=root simple_bank
 ```
-
-
 
 **Migration**
 
@@ -171,8 +159,6 @@ migrate -path db/migration -database "postgresql://root:secret@localhost:5432/si
 # --- migrate down ---
 migrate -path db/migration -database "postgresql://root:secret@localhost:5432/simple_bank?sslmode=disable" -verbose down
 ```
-
-
 
 **Write Makefile**
 
@@ -195,23 +181,17 @@ migratedown:
 .PHONY: postgres createdb dropdb migrateup migratedown
 ```
 
-
-
 ### 6. Generate CRUD Golang code from SQL
 
 sqlc SQL => Go
 
 [Sqlc docs]: https://docs.sqlc.dev/en/latest/
 
-
-
-**install sqlc** 
+**install sqlc**
 
 ```shell
 brew install kyleconroy/sqlc/sqlc
 ```
-
-
 
 **write a setting file**
 
@@ -258,10 +238,6 @@ sqlc:
 
 Create operation:
 
-
-
-
-
 Go
 
 [Pointer Receiver]: https://go.dev/tour/methods/4
@@ -270,39 +246,23 @@ the **receiver type** has the literal syntax **`*T`** for some type `T`. (Also, 
 
 Methods with pointer receivers can **<u>modify the value</u> to which the receiver points**
 
-
-
-
-
 7.
 
 https://pkg.go.dev/testing
-
-
 
 lib/bq
 
 stretchr/testify
 
-
-
 Main_test.go
 
-
-
 Account_test.go
-
-
 
 random.go
 
 UnixNano()
 
 Int63n
-
-
-
-
 
 ### 8. Implement db transaction in Golang
 
@@ -315,10 +275,6 @@ type Store struct {
 }
 ```
 
-
-
-
-
 ### 9. DB transaction lock & Handle deadlock
 
 Query with Lock
@@ -328,8 +284,6 @@ SELECT * FROM accounts WHERE id = 1 FOR UPDATE;
 ```
 
 它会被阻塞，必须等待第一个事务提交（`COMMIT`）或回滚（`ROLLBACK`）。通过添加 `FOR UPDATE` 子句，SQL 查询会锁定相关记录，确保其他并发事务在更新操作完成前无法访问这些记录。这种方式保证了数据一致性，避免了并发事务导致的更新冲突或不一致问题。
-
-
 
 Deadlock
 
@@ -349,43 +303,29 @@ Deadlock
 1. **强制锁定顺序**：确保所有并发的事务都按照相同的顺序获取锁定。比如，始终先锁定账户 ID 较小的账户，再锁定账户 ID 较大的账户。这样可以避免两个事务相互等待。
 2. **设置事务重试机制**：如果检测到死锁，可以让事务重试操作。数据库系统有时能够自动检测并中止一个事务，让另一个事务完成。我们可以在应用层进行捕获，重新尝试执行被中止的事务。
 
-
-
 ### 10. avoid deadlock in DB transaction: Queries order
-
-
 
 ### 11 Transaction isolation levels & read phenomena
 
 ACID Property
 
-
-
-
-
 **4 Read Phenomena**
 
--  `dirty read` phenomenon. It happens when a transaction reads data written by <u>other concurrent transaction that has not been committed yet</u>. This is terribly bad, because we don’t know if that other transaction will eventually be committed or rolled back. So we might end up using incorrect data in case rollback occurs.
--  `non-repeatable read`. When a transaction <u>reads the same record twice and see different values</u>, because the *row has been modified by other transaction* that was committed after the first read.
+- `dirty read` phenomenon. It happens when a transaction reads data written by <u>other concurrent transaction that has not been committed yet</u>. This is terribly bad, because we don’t know if that other transaction will eventually be committed or rolled back. So we might end up using incorrect data in case rollback occurs.
+- `non-repeatable read`. When a transaction <u>reads the same record twice and see different values</u>, because the _row has been modified by other transaction_ that was committed after the first read.
 - `Phantom read` is a similar phenomenon, but affects queries that search for <u>multiple rows</u> instead of one. In this case, <u>the same query is re-executed, but a different set of rows is returned</u>, due to some changes made by other recently-committed transactions, such as inserting new rows or deleting existing rows which happen to satisfy the search condition of current transaction’s query.
--  `serialization anomaly`. It’s when the result of a group of concurrent committed transactions could not be achieved if we try to run them sequentially <u>in any order</u> without overlapping each other.
-
-
+- `serialization anomaly`. It’s when the result of a group of concurrent committed transactions could not be achieved if we try to run them sequentially <u>in any order</u> without overlapping each other.
 
 **4 isolation levels**
 
--  `read uncommitted`. Transactions in this level can <u>see data written by other uncommitted transactions</u>, thus allowing `dirty read` phenomenon to happen.
--  `read committed`, where transactions can <u>only see data that has been committed by other transactions</u>. Because of this, `dirty read` is no longer possible.
--  `repeatable read` isolation level. It ensures that the <u>same select query will always return the same result</u>, no matter how many times it is executed, even if some other concurrent transactions have committed new changes that satisfy the query. `phantom read` phenomenon is also prevented in this `repeatable-read` isolation level
+- `read uncommitted`. Transactions in this level can <u>see data written by other uncommitted transactions</u>, thus allowing `dirty read` phenomenon to happen.
+- `read committed`, where transactions can <u>only see data that has been committed by other transactions</u>. Because of this, `dirty read` is no longer possible.
+- `repeatable read` isolation level. It ensures that the <u>same select query will always return the same result</u>, no matter how many times it is executed, even if some other concurrent transactions have committed new changes that satisfy the query. `phantom read` phenomenon is also prevented in this `repeatable-read` isolation level
 - `serializable`. Concurrent transactions running in this level are guaranteed to be able to yield the same result as if they’re executed sequentially in some order, one after another without overlapping. So basically it means that there exists at least 1 way to order these concurrent transactions so that if we run them one by one, the final result will be the same.
 
-​	(transaction 1, transaction 2; if t1 accounts1.balance -1, the update query will be blocked because  t2 is blocking this update query in t1)
-
-
+​ (transaction 1, transaction 2; if t1 accounts1.balance -1, the update query will be blocked because t2 is blocking this update query in t1)
 
 ### 12 Github Actions for Golang + Postgres to run automated tests
-
-
 
 **Workflow**
 
@@ -394,8 +334,6 @@ Workflow is basically an automated procedure that’s made up of one or more job
 - By an event that happens on the Github repository
 - By setting a repetitive schedule
 - Or manually clicking on the run workflow button on the repository UI.
-
-
 
 `.yml` to `.github/workflows`
 
@@ -411,13 +349,11 @@ jobs:
     runs-on: ubuntu-latest
 ```
 
-----------
+---
 
 **Job**
 
 A job is a set of steps that will be executed on the same runner.
-
-
 
 The jobs are listed inside the workflow under the `jobs` keyword.
 
@@ -437,11 +373,9 @@ jobs:
       - run: ./test_server.sh
 ```
 
------------
+---
 
 **Steps**
-
-
 
 ```
 jobs:
@@ -450,31 +384,19 @@ jobs:
     steps:
 ```
 
-
-
-
-
-
-
 # Section2: Building RESTful HTTP JSON API
 
 ### 13. RESTful API using Gin
 
-
-
 ### 14. Loading config with Viper
 
 https://github.com/uber-go/mock
-
-
 
 16.
 
 Aud usd
 
 20. stronger unit tests with gomock
-
-
 
 weak unit test without gomock
 
@@ -626,15 +548,7 @@ func TestCreateUserAPI(t *testing.T) {
 
 ```
 
-
-
-
-
-
-
 # Section 3: Deploying the app to production (docker + kubernetes + aws)
-
-
 
 how to build a minimal docker golang container
 
@@ -654,20 +568,16 @@ EXPOSE 8080
 CMD [ "/app/main" ]
 ```
 
-
-
 ```shell
 docker images
 docker rmi f312ac8a88e6
 docker rm simplebank
 ```
 
-
-
 Use docker network to connect 2 stand-alone containers
 
 ```shell
-docker run --name simplebank -p 8080:8080 -e GIN_MODE=release simplebank:latest 
+docker run --name simplebank -p 8080:8080 -e GIN_MODE=release simplebank:latest
 docker ps
 docker container inspect postgres12
 
@@ -682,18 +592,21 @@ docker run --name simplebank --network bank-network -p 8080:8080 -e GIN_MODE=rel
 
 ```
 
+```shell
+git checkout main
+git pull
 
+```
 
 docker compose
 
 https://docs.docker.com/reference/compose-file/
 
-
-
-
-
 ```
-# 
+#
+aws secretsmanager get-secret-value --secret-id simple_bank --query SecretString --output text
+
+#
 docker pull 767398022207.dkr.ecr.ap-southeast-2.amazonaws.com/commonrich:ae8ca3fcda68c7800ea631fbc930abd504735020
 
 # aws ecr get login password
@@ -705,15 +618,8 @@ source app.env
 docker run ...
 ```
 
-
-
-
-
 # Helpful Links
 
 [Go in Visual Studio Code]: https://code.visualstudio.com/docs/languages/go
 
-
-
 # A Tour of Go
-
