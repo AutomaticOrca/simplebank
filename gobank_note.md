@@ -596,6 +596,8 @@ docker run --name simplebank --network bank-network -p 8080:8080 -e GIN_MODE=rel
 git checkout main
 git pull
 
+
+docker run -p 8080:8080
 ```
 
 docker compose
