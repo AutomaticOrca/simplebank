@@ -618,7 +618,22 @@ aws ecr get-login-password | docker login --username AWS --password-stdin 767398
 source app.env
 
 docker run ...
+
+# 33. use kubectl to connect a k8s cluster on EKS
+# https://repost.aws/knowledge-center/amazon-eks-cluster-access
+kubectl config use-context arn:aws:eks:ap-southeast-2:767398022207:cluster/simple-bank
+export AWS_PROFILE=github
+
+kubectl cluster-info
+
+export AWS_PROFILE=github
+# :ns
+
+kubectl apply -f eks/deployment.yaml
 ```
+
+Kubernetes
+An API object that managers external access to the services in a cluster, typically HTTP
 
 # Helpful Links
 
