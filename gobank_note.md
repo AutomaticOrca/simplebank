@@ -635,6 +635,10 @@ kubectl apply -f eks/deployment.yaml
 Kubernetes
 An API object that managers external access to the services in a cluster, typically HTTP
 
+ClusterIP: inside K8s cluster
+Load Balancer:
+wildcard
+
 # Helpful Links
 
 [Go in Visual Studio Code]: https://code.visualstudio.com/docs/languages/go
