@@ -639,6 +639,8 @@ ClusterIP: inside K8s cluster
 Load Balancer:
 wildcard
 
+fix image tag and update kube config
+
 # Helpful Links
 
 [Go in Visual Studio Code]: https://code.visualstudio.com/docs/languages/go
