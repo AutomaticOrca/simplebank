@@ -11,6 +11,7 @@ FROM alpine:3.20
 WORKDIR /app
 COPY --from=builder /app/main . 
 COPY --from=builder /app/migrate ./migrate
+COPY app.env .
 COPY start.sh .
 COPY wait-for.sh .
 COPY db/migration ./migration
@@ -18,6 +19,6 @@ COPY db/migration ./migration
 RUN chmod +x wait-for.sh start.sh
 
 EXPOSE 8080
-CMD [ "/app/main" ]
-ENTRYPOINT [ "/app/start.sh" ]
+ENTRYPOINT ["/bin/sh", "/app/start.sh"]
+CMD ["/app/main"]
 
