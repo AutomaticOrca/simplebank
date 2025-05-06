@@ -22,24 +22,60 @@ type Config struct {
 }
 
 func LoadConfig(path string) (config Config, err error) {
-	viper.AddConfigPath(path)  // 比如 "."
-	viper.SetConfigName("app") // 会寻找 app.env, app.yaml 等
-	viper.SetConfigType("env") // 明确指定文件类型为 env
+	viper.AddConfigPath(path)
+	viper.SetConfigName("app")
+	viper.SetConfigType("env")
 
-	// 尝试读取配置文件。在生产环境中，如果文件不存在，我们更依赖环境变量。
-	// _ = viper.ReadInConfig() // 我们之前讨论过，可以更明确地处理这个错误
-	if errRead := viper.ReadInConfig(); errRead != nil {
-		if _, ok := errRead.(viper.ConfigFileNotFoundError); ok {
-			// log.Info().Msg("Configuration file 'app.env' not found. Relying on environment variables.") // 【建议】加入日志
-		} else {
-			// log.Warn().Err(errRead).Msg("Error reading configuration file.") // 【建议】加入日志
-		}
+	// 尝试读取文件，但主要依赖环境变量
+	_ = viper.ReadInConfig() // 让它尝试读，但我们不依赖它
+
+	err = viper.BindEnv("DBDriver", "DB_DRIVER")
+	if err != nil {
+		return
+	} // 简单处理错误，实际可以打日志
+	err = viper.BindEnv("DBSource", "DB_SOURCE")
+	if err != nil {
+		return
+	}
+	err = viper.BindEnv("HTTPServerAddress", "HTTP_SERVER_ADDRESS")
+	if err != nil {
+		return
+	}
+	err = viper.BindEnv("RedisAddress", "REDIS_ADDRESS")
+	if err != nil {
+		return
+	}
+	err = viper.BindEnv("RedisPassword", "REDIS_PASSWORD")
+	if err != nil {
+		return
+	}
+	// 为其他所有需要的字段也添加类似的 BindEnv
+	err = viper.BindEnv("TokenSymmetricKey", "TOKEN_SYMMETRIC_KEY")
+	if err != nil {
+		return
+	}
+	err = viper.BindEnv("AccessTokenDuration", "ACCESS_TOKEN_DURATION")
+	if err != nil {
+		return
+	}
+	err = viper.BindEnv("RefreshTokenDuration", "REFRESH_TOKEN_DURATION")
+	if err != nil {
+		return
+	}
+	err = viper.BindEnv("EmailSenderName", "EMAIL_SENDER_NAME")
+	if err != nil {
+		return
+	}
+	err = viper.BindEnv("EmailSenderAddress", "EMAIL_SENDER_ADDRESS")
+	if err != nil {
+		return
+	}
+	err = viper.BindEnv("EmailSenderPassword", "EMAIL_SENDER_PASSWORD")
+	if err != nil {
+		return
 	}
 
-	// 让 viper 也能从环境变量中读取配置
-	// 例如，DB_DRIVER 环境变量会自动映射到 Config 结构体的 DBDriver 字段
-	// (前提是 mapstructure 标签匹配或字段名自动转换匹配，viper 默认会将环境变量名转为大写)
-	viper.AutomaticEnv()
+	viper.AutomaticEnv() // 仍然调用它，以覆盖其他未显式绑定的字段
 
 	err = viper.Unmarshal(&config)
 	return
