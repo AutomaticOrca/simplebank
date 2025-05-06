@@ -1,0 +1,59 @@
+# === Go ===
+# Compiled executable files
+# (通常是项目名或者 main 包所在的目录名，根据你的 main.go，可能编译后叫 simplebank)
+simplebank
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test files
+*.test
+
+# Profile Pprof files
+*.prof
+
+# Coverage files
+*.out
+coverage.txt
+coverage.html
+
+# Dependency directory (if using vendor/)
+# vendor/
+
+# === Environment ===
+# Environment variables file (contains secrets!)
+app.env
+
+# === IDE/Editor Files ===
+# IntelliJ IDEA files
+.idea/
+
+# Visual Studio Code files
+.vscode/
+
+# Vim swap files
+*.swp
+*.swo
+*~
+
+# === OS Files ===
+# macOS specific files
+.DS_Store
+
+# Windows specific files
+Thumbs.db
+
+# === Logs ===
+# Log files
+*.log
+*.log.*
+
+# === Other (Optional) ===
+# Large SQL dump files (if these are backups/exports)
+# Uncomment and adjust if Simple bank.sql / simplebank_2_17.sql are not meant to be in git
+# Simple bank.sql
+# simplebank*.sql
+
+# Add any other build artifacts or temporary files specific to your project
