@@ -2,13 +2,13 @@
 // Source: github.com/AutomaticOrca/simplebank/worker (interfaces: TaskDistributor)
 
 // Package mock_worker is a generated GoMock package.
-package mock_worker
+package mock
 
 import (
 	context "context"
+	"github.com/AutomaticOrca/simplebank/worker"
 	reflect "reflect"
 
-	worker "github.com/AutomaticOrca/simplebank/worker"
 	gomock "github.com/golang/mock/gomock"
 	asynq "github.com/hibiken/asynq"
 )

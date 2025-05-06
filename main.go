@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/tls"
 	"database/sql"
 
 	"github.com/rs/zerolog/log"
@@ -28,7 +29,12 @@ func main() {
 	store := db.NewStore(conn)
 
 	redisOpt := asynq.RedisClientOpt{
-		Addr: config.RedisAddress,
+		Addr:     config.RedisAddress,
+		Password: config.RedisPassword,
+		Username: "default",
+		TLSConfig: &tls.Config{
+			MinVersion: tls.VersionTLS12,
+		},
 	}
 
 	taskDistributor := worker.NewRedisTaskDistributor(redisOpt)
