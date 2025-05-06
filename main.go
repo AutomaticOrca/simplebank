@@ -21,6 +21,16 @@ func main() {
 		log.Fatal().Err(err).Msg("cannot load config:")
 	}
 
+	log.Info().
+		Str("db_driver", config.DBDriver). // ★★★ 打印 DBDriver
+		Bool("db_source_is_empty", config.DBSource == ""). // 检查 DBSource 是否为空
+		Str("http_server_address", config.HTTPServerAddress).
+		Str("redis_address", config.RedisAddress).
+		Msg("Loaded configuration values from environment")
+
+	if config.DBDriver == "" { // 【新增】明确检查 DBDriver 是否为空
+		log.Fatal().Msg("DB_DRIVER configuration is empty, cannot proceed")
+	}
 	conn, err := sql.Open(config.DBDriver, config.DBSource)
 	if err != nil {
 		log.Fatal().Err(err).Msg("cannot connect to db")
