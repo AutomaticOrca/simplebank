@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/tls"
 	"database/sql"
+	"fmt"
 
 	"github.com/rs/zerolog/log"
 
@@ -21,16 +22,23 @@ func main() {
 		log.Fatal().Err(err).Msg("cannot load config:")
 	}
 
+	// main.go 中 LoadConfig 之后
 	log.Info().
-		Str("db_driver", config.DBDriver). // ★★★ 打印 DBDriver
-		Bool("db_source_is_empty", config.DBSource == ""). // 检查 DBSource 是否为空
+		Str("db_driver", config.DBDriver).
+		Str("db_source_is_empty", fmt.Sprintf("%t", config.DBSource == "")).
 		Str("http_server_address", config.HTTPServerAddress).
 		Str("redis_address", config.RedisAddress).
+		Str("redis_password_is_empty", fmt.Sprintf("%t", config.RedisPassword == "")). // 检查 Redis 密码
+		// 打印所有其他你关心的配置项...
 		Msg("Loaded configuration values from environment")
 
-	if config.DBDriver == "" { // 【新增】明确检查 DBDriver 是否为空
+	if config.DBDriver == "" {
 		log.Fatal().Msg("DB_DRIVER configuration is empty, cannot proceed")
 	}
+	if config.RedisAddress == "" { // 示例：添加对 Redis 地址的检查
+		log.Fatal().Msg("REDIS_ADDRESS configuration is empty, cannot proceed")
+	}
+
 	conn, err := sql.Open(config.DBDriver, config.DBSource)
 	if err != nil {
 		log.Fatal().Err(err).Msg("cannot connect to db")
