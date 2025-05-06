@@ -33,8 +33,14 @@ sqlc:
 test:
 	go test -v -cover ./...
 
+mock:
+	mockgen -package mockdb -destination db/mock/store.go github.com/AutomaticOrca/simplebank/db/sqlc Store
+	
 server:
 	go run main.go
+
+redis:
+	docker run --name redis -p 6379:6379 -d redis:7-alpine
 
 mock:
 	mockgen -package mockdb -destination db/mock/store.go github.com/AutomaticOrca/simplebank/db/sqlc Store

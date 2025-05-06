@@ -2,14 +2,19 @@ package api
 
 import (
 	"database/sql"
+	"fmt"
 	"net/http"
 	"time"
 
 	db "github.com/AutomaticOrca/simplebank/db/sqlc"
 	"github.com/AutomaticOrca/simplebank/util"
+	"github.com/AutomaticOrca/simplebank/val"
+	"github.com/AutomaticOrca/simplebank/worker"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/hibiken/asynq"
 	"github.com/lib/pq"
+	"github.com/rs/zerolog/log"
 )
 
 type createUserRequest struct {
@@ -44,34 +49,74 @@ func (server *Server) createUser(ctx *gin.Context) {
 		return
 	}
 
+	if err := val.ValidateUsername(req.Username); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+	if err := val.ValidatePassword(req.Password); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+	if err := val.ValidateFullName(req.FullName); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+	if err := val.ValidateEmail(req.Email); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
 	hashedPassword, err := util.HashPassword(req.Password)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 
-	arg := db.CreateUserParams{
-		Username:       req.Username,
-		HashedPassword: hashedPassword,
-		FullName:       req.FullName,
-		Email:          req.Email,
+	arg := db.CreateUserTxParams{ // 【修改】参数类型变化
+		// CreateUserParams 嵌入在 CreateUserTxParams 中 (内容和你原来填充 arg 的方式一样)
+		CreateUserParams: db.CreateUserParams{
+			Username:       req.Username,
+			HashedPassword: hashedPassword,
+			FullName:       req.FullName,
+			Email:          req.Email,
+		},
+		// 【新增】定义 AfterCreate 回调函数
+		AfterCreate: func(user db.User) error {
+
+			taskPayload := &worker.PayloadSendVerifyEmail{
+				Username: user.Username,
+			}
+
+			opts := []asynq.Option{
+				asynq.MaxRetry(5),
+				asynq.ProcessIn(10 * time.Second),
+				asynq.Queue(worker.QueueCritical),
+			}
+
+			log.Info().Str("username", user.Username).Msg("enqueuing task to send verification email")
+
+			return server.taskDistributor.DistributeTaskSendVerifyEmail(ctx, taskPayload, opts...)
+		},
 	}
 
-	user, err := server.store.CreateUser(ctx, arg)
+	txResult, err := server.store.CreateUserTx(ctx, arg)
 	if err != nil {
 		if pqErr, ok := err.(*pq.Error); ok {
 			switch pqErr.Code.Name() {
 			case "unique_violation":
-				ctx.JSON(http.StatusForbidden, errorResponse(err))
+
+				ctx.JSON(http.StatusConflict, errorResponse(fmt.Errorf("username or email already exists")))
 				return
 			}
 		}
+
+		log.Error().Err(err).Msg("failed to execute create user transaction")
 		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
 		return
 	}
 
-	rsp := newUserResponse(user)
-	ctx.JSON(http.StatusOK, rsp)
+	rsp := newUserResponse(txResult.User)
+	ctx.JSON(http.StatusCreated, rsp)
 }
 
 type loginUserRequest struct {

@@ -7,7 +7,9 @@ import (
 
 	db "github.com/AutomaticOrca/simplebank/db/sqlc"
 	"github.com/AutomaticOrca/simplebank/util"
+	mockwk "github.com/AutomaticOrca/simplebank/worker/mock"
 	"github.com/gin-gonic/gin"
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -18,7 +20,9 @@ func newTestServer(t *testing.T, store db.Store) *Server {
 		AccessTokenDuration: time.Minute,
 	}
 
-	server, err := NewServer(config, store)
+	ctrl := gomock.NewController(t)
+	mockTaskDistributor := mockwk.NewMockTaskDistributor(ctrl)
+	server, err := NewServer(config, store, mockTaskDistributor)
 	require.NoError(t, err)
 
 	return server
