@@ -24,7 +24,7 @@ coverage.html
 
 # === Environment ===
 # Environment variables file (contains secrets!)
-app.env
+.env
 
 # === IDE/Editor Files ===
 # IntelliJ IDEA files

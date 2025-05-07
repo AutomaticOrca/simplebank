@@ -6,6 +6,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/rs/zerolog/log"
+
 	// 这会自动加载你的 .env 文件 (通常是项目根目录下的 .env)
 	_ "github.com/joho/godotenv/autoload"
 )
@@ -25,11 +27,8 @@ type Config struct {
 	EmailSenderPassword  string
 }
 
-func LoadConfig() (*Config, error) {
-	cfg := &Config{}
-	var err error
-
-	// 读取字符串类型的环境变量
+func LoadConfig() (cfg Config, err error) {
+	log.Info().Msg("Loading configuration directly from environment variables...")
 	cfg.Environment = os.Getenv("ENVIRONMENT")
 	cfg.DBDriver = os.Getenv("DB_DRIVER")
 	cfg.DBSource = os.Getenv("DB_SOURCE")
@@ -44,45 +43,45 @@ func LoadConfig() (*Config, error) {
 	// --- 必要配置项检查 (示例) ---
 	// 你可以根据需要，对认为必须存在的配置项进行检查
 	if cfg.DBDriver == "" {
-		return nil, errors.New("DB_DRIVER environment variable is not set or is empty")
+		return Config{}, errors.New("DB_DRIVER environment variable is not set or is empty")
 	}
 	if cfg.DBSource == "" {
-		return nil, errors.New("DB_SOURCE environment variable is not set or is empty")
+		return Config{}, errors.New("DB_SOURCE environment variable is not set or is empty")
 	}
 	if cfg.HTTPServerAddress == "" {
-		return nil, errors.New("HTTP_SERVER_ADDRESS environment variable is not set or is empty")
+		return Config{}, errors.New("HTTP_SERVER_ADDRESS environment variable is not set or is empty")
 	}
 	if cfg.TokenSymmetricKey == "" {
-		return nil, errors.New("TOKEN_SYMMETRIC_KEY environment variable is not set or is empty")
+		return Config{}, errors.New("TOKEN_SYMMETRIC_KEY environment variable is not set or is empty")
 	}
 	// ... 其他必要配置项的检查
 
 	// 读取并解析 time.Duration 类型的环境变量
 	accessTokenDurationStr := os.Getenv("ACCESS_TOKEN_DURATION")
 	if accessTokenDurationStr == "" {
-		return nil, errors.New("ACCESS_TOKEN_DURATION environment variable is not set or is empty")
+		return Config{}, errors.New("ACCESS_TOKEN_DURATION environment variable is not set or is empty")
 	}
 	cfg.AccessTokenDuration, err = time.ParseDuration(accessTokenDurationStr)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse ACCESS_TOKEN_DURATION: %w", err)
+		return Config{}, fmt.Errorf("failed to parse ACCESS_TOKEN_DURATION: %w", err)
 	}
 
 	refreshTokenDurationStr := os.Getenv("REFRESH_TOKEN_DURATION")
 	if refreshTokenDurationStr == "" {
-		return nil, errors.New("REFRESH_TOKEN_DURATION environment variable is not set or is empty")
+		return Config{}, errors.New("REFRESH_TOKEN_DURATION environment variable is not set or is empty")
 	}
 	cfg.RefreshTokenDuration, err = time.ParseDuration(refreshTokenDurationStr)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse REFRESH_TOKEN_DURATION: %w", err)
+		return Config{}, fmt.Errorf("failed to parse REFRESH_TOKEN_DURATION: %w", err)
 	}
 
 	// --- 电子邮件相关配置检查 (示例，如果邮件功能是核心功能) ---
 	if cfg.EmailSenderAddress != "" { // 如果设置了发送地址，则认为邮件功能被启用
 		if cfg.EmailSenderName == "" {
-			return nil, errors.New("EMAIL_SENDER_NAME must be set if EMAIL_SENDER_ADDRESS is set")
+			return Config{}, errors.New("EMAIL_SENDER_NAME must be set if EMAIL_SENDER_ADDRESS is set")
 		}
 		if cfg.EmailSenderPassword == "" {
-			return nil, errors.New("EMAIL_SENDER_PASSWORD must be set if EMAIL_SENDER_ADDRESS is set")
+			return Config{}, errors.New("EMAIL_SENDER_PASSWORD must be set if EMAIL_SENDER_ADDRESS is set")
 		}
 	}
 
