@@ -60,7 +60,8 @@ func (processor *RedisTaskProcessor) ProcessTaskSendVerifyEmail(ctx context.Cont
 
 	subject := "Welcome to Simple Bank"
 	// TODO: replace this URL with an environment variable that points to a front-end page
-	verifyUrl := fmt.Sprintf("http://localhost:8080/users/verify_email?email_id=%d&secret_code=%s",
+	verifyUrl := fmt.Sprintf("%s/users/verify_email?email_id=%d&secret_code=%s",
+		processor.config.FrontendBaseURL,
 		verifyEmail.ID, verifyEmail.SecretCode)
 	content := fmt.Sprintf(`Hello %s,<br/>
 	Thank you for registering with us!<br/>

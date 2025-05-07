@@ -102,5 +102,12 @@ func (server *Server) listAccounts(ctx *gin.Context) {
 		return
 	}
 
+	if accounts == nil {
+		// 返回一个空的 Account 切片，它会被序列化为 []
+		// 确保使用正确的类型，这里假设是 db.Account
+		ctx.JSON(http.StatusOK, []db.Account{})
+		return
+	}
+
 	ctx.JSON(http.StatusOK, accounts)
 }

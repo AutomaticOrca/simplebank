@@ -8,7 +8,6 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	// 这会自动加载你的 .env 文件 (通常是项目根目录下的 .env)
 	_ "github.com/joho/godotenv/autoload"
 )
 
@@ -17,7 +16,7 @@ type Config struct {
 	DBDriver             string
 	DBSource             string
 	RedisAddress         string
-	RedisPassword        string // 如果 Redis 不需要密码，此项可以为空
+	RedisPassword        string
 	HTTPServerAddress    string
 	TokenSymmetricKey    string
 	AccessTokenDuration  time.Duration
@@ -25,6 +24,7 @@ type Config struct {
 	EmailSenderName      string
 	EmailSenderAddress   string
 	EmailSenderPassword  string
+	FrontendBaseURL      string
 }
 
 func LoadConfig() (cfg Config, err error) {
@@ -33,13 +33,13 @@ func LoadConfig() (cfg Config, err error) {
 	cfg.DBDriver = os.Getenv("DB_DRIVER")
 	cfg.DBSource = os.Getenv("DB_SOURCE")
 	cfg.RedisAddress = os.Getenv("REDIS_ADDRESS")
-	cfg.RedisPassword = os.Getenv("REDIS_PASSWORD") // 可选
+	cfg.RedisPassword = os.Getenv("REDIS_PASSWORD")
 	cfg.HTTPServerAddress = os.Getenv("HTTP_SERVER_ADDRESS")
 	cfg.TokenSymmetricKey = os.Getenv("TOKEN_SYMMETRIC_KEY")
 	cfg.EmailSenderName = os.Getenv("EMAIL_SENDER_NAME")
 	cfg.EmailSenderAddress = os.Getenv("EMAIL_SENDER_ADDRESS")
 	cfg.EmailSenderPassword = os.Getenv("EMAIL_SENDER_PASSWORD")
-
+	cfg.FrontendBaseURL = os.Getenv("FRONTEND_BASE_URL")
 	// --- 必要配置项检查 (示例) ---
 	// 你可以根据需要，对认为必须存在的配置项进行检查
 	if cfg.DBDriver == "" {
@@ -54,7 +54,6 @@ func LoadConfig() (cfg Config, err error) {
 	if cfg.TokenSymmetricKey == "" {
 		return Config{}, errors.New("TOKEN_SYMMETRIC_KEY environment variable is not set or is empty")
 	}
-	// ... 其他必要配置项的检查
 
 	// 读取并解析 time.Duration 类型的环境变量
 	accessTokenDurationStr := os.Getenv("ACCESS_TOKEN_DURATION")
@@ -84,6 +83,10 @@ func LoadConfig() (cfg Config, err error) {
 			return Config{}, errors.New("EMAIL_SENDER_PASSWORD must be set if EMAIL_SENDER_ADDRESS is set")
 		}
 	}
-
+	if cfg.Environment == "" {
+		log.Warn().Msg("ENVIRONMENT variable not set, defaulting to 'development'")
+		cfg.Environment = "development"
+	}
+	log.Info().Str("environment", cfg.Environment).Msg("Configuration loaded successfully")
 	return cfg, nil
 }
