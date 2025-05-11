@@ -60,7 +60,7 @@ func (server *Server) sendVerificationEmailAsync(createdUser db.User) {
 
 	subject := "Welcome to Simple Bank"
 	verifyUrl := fmt.Sprintf("%s/users/verify_email?email_id=%d&secret_code=%s",
-		server.config.FrontendBaseURL, // Accessing via server struct
+		server.config.FrontendBaseURL,
 		verifyEmailEntry.ID,
 		verifyEmailEntry.SecretCode)
 
