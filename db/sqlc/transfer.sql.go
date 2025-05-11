@@ -106,3 +106,49 @@ func (q *Queries) ListTransfers(ctx context.Context, arg ListTransfersParams) ([
 	}
 	return items, nil
 }
+
+const listTransfersByUsername = `-- name: ListTransfersByUsername :many
+SELECT t.id, t.from_account_id, t.to_account_id, t.amount, t.created_at
+FROM transfers t
+         JOIN accounts a_from ON t.from_account_id = a_from.id
+         JOIN accounts a_to ON t.to_account_id = a_to.id
+WHERE a_from.owner = $1 OR a_to.owner = $1
+ORDER BY t.created_at DESC
+LIMIT $2
+    OFFSET $3
+`
+
+type ListTransfersByUsernameParams struct {
+	Owner  string `json:"owner"`
+	Limit  int32  `json:"limit"`
+	Offset int32  `json:"offset"`
+}
+
+func (q *Queries) ListTransfersByUsername(ctx context.Context, arg ListTransfersByUsernameParams) ([]Transfer, error) {
+	rows, err := q.db.QueryContext(ctx, listTransfersByUsername, arg.Owner, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Transfer
+	for rows.Next() {
+		var i Transfer
+		if err := rows.Scan(
+			&i.ID,
+			&i.FromAccountID,
+			&i.ToAccountID,
+			&i.Amount,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

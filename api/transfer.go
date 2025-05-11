@@ -18,6 +18,11 @@ type transferRequest struct {
 	Currency      string `json:"currency" binding:"required,currency"`
 }
 
+type listTransfersRequest struct {
+	PageID   int32 `form:"page_id" binding:"min=1"`
+	PageSize int32 `form:"page_size" binding:"min=5,max=10"`
+}
+
 func (server *Server) createTransfer(ctx *gin.Context) {
 	var req transferRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -75,4 +80,34 @@ func (server *Server) validAccount(ctx *gin.Context, accountID int64, currency s
 	}
 
 	return account, true
+}
+
+func (server *Server) listTransfers(ctx *gin.Context) {
+	var req listTransfersRequest
+	if err := ctx.ShouldBindQuery(&req); err != nil {
+		ctx.JSON(http.StatusBadRequest, errorResponse(err))
+		return
+	}
+
+	if req.PageID == 0 {
+		req.PageID = 1
+	}
+	if req.PageSize == 0 {
+		req.PageSize = 5
+	}
+
+	authPayload := ctx.MustGet(authorizationPayloadKey).(*token.Payload)
+	arg := db.ListTransfersByUsernameParams{
+		Owner:  authPayload.Username,
+		Limit:  req.PageSize,
+		Offset: (req.PageID - 1) * req.PageSize,
+	}
+
+	transfers, err := server.store.ListTransfersByUsername(ctx, arg)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, errorResponse(err))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, transfers)
 }
