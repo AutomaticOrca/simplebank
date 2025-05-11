@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"time"
 )
 
 const createTransfer = `-- name: CreateTransfer :one
@@ -108,10 +109,16 @@ func (q *Queries) ListTransfers(ctx context.Context, arg ListTransfersParams) ([
 }
 
 const listTransfersByUsername = `-- name: ListTransfersByUsername :many
-SELECT t.id, t.from_account_id, t.to_account_id, t.amount, t.created_at
+SELECT
+    t.id,
+    t.from_account_id,
+    t.to_account_id,
+    t.amount,
+    t.created_at,
+    a_from.currency  -- Adding the currency from the 'from' account
 FROM transfers t
          JOIN accounts a_from ON t.from_account_id = a_from.id
-         JOIN accounts a_to ON t.to_account_id = a_to.id
+         JOIN accounts a_to ON t.to_account_id = a_to.id -- This join is still needed for the WHERE clause
 WHERE a_from.owner = $1 OR a_to.owner = $1
 ORDER BY t.created_at DESC
 LIMIT $2
@@ -124,21 +131,31 @@ type ListTransfersByUsernameParams struct {
 	Offset int32  `json:"offset"`
 }
 
-func (q *Queries) ListTransfersByUsername(ctx context.Context, arg ListTransfersByUsernameParams) ([]Transfer, error) {
+type ListTransfersByUsernameRow struct {
+	ID            int64     `json:"id"`
+	FromAccountID int64     `json:"from_account_id"`
+	ToAccountID   int64     `json:"to_account_id"`
+	Amount        int64     `json:"amount"`
+	CreatedAt     time.Time `json:"created_at"`
+	Currency      string    `json:"currency"`
+}
+
+func (q *Queries) ListTransfersByUsername(ctx context.Context, arg ListTransfersByUsernameParams) ([]ListTransfersByUsernameRow, error) {
 	rows, err := q.db.QueryContext(ctx, listTransfersByUsername, arg.Owner, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Transfer
+	var items []ListTransfersByUsernameRow
 	for rows.Next() {
-		var i Transfer
+		var i ListTransfersByUsernameRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.FromAccountID,
 			&i.ToAccountID,
 			&i.Amount,
 			&i.CreatedAt,
+			&i.Currency,
 		); err != nil {
 			return nil, err
 		}

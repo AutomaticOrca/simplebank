@@ -21,10 +21,16 @@ LIMIT $3
 OFFSET $4;
 
 -- name: ListTransfersByUsername :many
-SELECT t.*
+SELECT
+    t.id,
+    t.from_account_id,
+    t.to_account_id,
+    t.amount,
+    t.created_at,
+    a_from.currency  -- Adding the currency from the 'from' account
 FROM transfers t
          JOIN accounts a_from ON t.from_account_id = a_from.id
-         JOIN accounts a_to ON t.to_account_id = a_to.id
+         JOIN accounts a_to ON t.to_account_id = a_to.id -- This join is still needed for the WHERE clause
 WHERE a_from.owner = $1 OR a_to.owner = $1
 ORDER BY t.created_at DESC
 LIMIT $2

@@ -28,7 +28,7 @@ type Querier interface {
 	ListAccounts(ctx context.Context, arg ListAccountsParams) ([]Account, error)
 	ListEntries(ctx context.Context, arg ListEntriesParams) ([]Entry, error)
 	ListTransfers(ctx context.Context, arg ListTransfersParams) ([]Transfer, error)
-	ListTransfersByUsername(ctx context.Context, arg ListTransfersByUsernameParams) ([]Transfer, error)
+	ListTransfersByUsername(ctx context.Context, arg ListTransfersByUsernameParams) ([]ListTransfersByUsernameRow, error)
 	UpdateAccount(ctx context.Context, arg UpdateAccountParams) error
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
 	UpdateVerifyEmail(ctx context.Context, arg UpdateVerifyEmailParams) (VerifyEmail, error)

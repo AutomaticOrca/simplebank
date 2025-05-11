@@ -306,10 +306,10 @@ func (mr *MockStoreMockRecorder) ListTransfers(arg0, arg1 interface{}) *gomock.C
 }
 
 // ListTransfersByUsername mocks base method.
-func (m *MockStore) ListTransfersByUsername(arg0 context.Context, arg1 db.ListTransfersByUsernameParams) ([]db.Transfer, error) {
+func (m *MockStore) ListTransfersByUsername(arg0 context.Context, arg1 db.ListTransfersByUsernameParams) ([]db.ListTransfersByUsernameRow, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListTransfersByUsername", arg0, arg1)
-	ret0, _ := ret[0].([]db.Transfer)
+	ret0, _ := ret[0].([]db.ListTransfersByUsernameRow)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }

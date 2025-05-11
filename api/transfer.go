@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	db "github.com/AutomaticOrca/simplebank/db/sqlc"
 	"github.com/AutomaticOrca/simplebank/token"
@@ -21,6 +22,15 @@ type transferRequest struct {
 type listTransfersRequest struct {
 	PageID   int32 `form:"page_id" binding:"min=1"`
 	PageSize int32 `form:"page_size" binding:"min=5,max=10"`
+}
+
+type transferResponse struct {
+	ID            int64     `json:"id"`
+	FromAccountID int64     `json:"from_account_id"`
+	ToAccountID   int64     `json:"to_account_id"`
+	Amount        int64     `json:"amount"`
+	Currency      string    `json:"currency"`
+	CreatedAt     time.Time `json:"created_at"`
 }
 
 func (server *Server) createTransfer(ctx *gin.Context) {
@@ -109,5 +119,17 @@ func (server *Server) listTransfers(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, transfers)
+	response := make([]transferResponse, len(transfers))
+	for i, transfer := range transfers {
+		response[i] = transferResponse{
+			ID:            transfer.ID,
+			FromAccountID: transfer.FromAccountID,
+			ToAccountID:   transfer.ToAccountID,
+			Amount:        transfer.Amount,
+			Currency:      transfer.Currency,
+			CreatedAt:     transfer.CreatedAt,
+		}
+	}
+
+	ctx.JSON(http.StatusOK, response)
 }
