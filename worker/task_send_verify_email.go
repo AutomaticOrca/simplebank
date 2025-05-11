@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	db "github.com/AutomaticOrca/simplebank/db/sqlc"
 	"github.com/AutomaticOrca/simplebank/util"
@@ -27,7 +28,14 @@ func (distributor *RedisTaskDistributor) DistributeTaskSendVerifyEmail(
 		return fmt.Errorf("failed to marshal task payload: %w", err)
 	}
 
-	task := asynq.NewTask(TaskSendVerifyEmail, jsonPayload, opts...)
+	defaultOpts := []asynq.Option{ // <<< ADDED
+		asynq.MaxRetry(3),               // <<< ADDED: Set maximum retry attempts to 3
+		asynq.Retention(24 * time.Hour), // <<< ADDED: Retain completed tasks for 24 hours
+	}
+
+	finalOpts := append(defaultOpts, opts...)
+
+	task := asynq.NewTask(TaskSendVerifyEmail, jsonPayload, finalOpts...)
 	info, err := distributor.client.EnqueueContext(ctx, task)
 	if err != nil {
 		return fmt.Errorf("failed to enqueue task: %w", err)

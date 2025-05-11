@@ -2,6 +2,7 @@ package worker
 
 import (
 	"context"
+	"time"
 
 	db "github.com/AutomaticOrca/simplebank/db/sqlc"
 	"github.com/AutomaticOrca/simplebank/mail"
@@ -37,14 +38,16 @@ func NewRedisTaskProcessor(redisOpt asynq.RedisClientOpt, store db.Store, mailer
 		redisOpt,
 		asynq.Config{
 			Queues: map[string]int{
-				QueueCritical: 10,
-				QueueDefault:  5,
+				QueueCritical: 3,
+				QueueDefault:  2,
 			},
 			ErrorHandler: asynq.ErrorHandlerFunc(func(ctx context.Context, task *asynq.Task, err error) {
 				log.Error().Err(err).Str("type", task.Type()).
 					Bytes("payload", task.Payload()).Msg("process task failed")
 			}),
-			Logger: logger,
+			Logger:                   logger,
+			HealthCheckInterval:      60 * time.Second,
+			DelayedTaskCheckInterval: 300 * time.Second,
 		},
 	)
 

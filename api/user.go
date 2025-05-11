@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"net/http"
@@ -9,10 +10,8 @@ import (
 	db "github.com/AutomaticOrca/simplebank/db/sqlc"
 	"github.com/AutomaticOrca/simplebank/util"
 	"github.com/AutomaticOrca/simplebank/val"
-	"github.com/AutomaticOrca/simplebank/worker"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/hibiken/asynq"
 	"github.com/lib/pq"
 	"github.com/rs/zerolog/log"
 )
@@ -40,6 +39,43 @@ func newUserResponse(user db.User) userResponse {
 		PasswordChangedAt: user.PasswordChangedAt,
 		CreatedAt:         user.CreatedAt,
 	}
+}
+
+func (server *Server) sendVerificationEmailAsync(createdUser db.User) {
+	goroutineCtx := context.Background()
+
+	log.Info().Str("username", createdUser.Username).Msg("[Goroutine] Initiating verification email process...")
+
+	secretCode := util.RandomString(32)
+	verifyEmailEntry, err := server.store.CreateVerifyEmail(goroutineCtx, db.CreateVerifyEmailParams{
+		Username:   createdUser.Username,
+		Email:      createdUser.Email,
+		SecretCode: secretCode,
+	})
+	if err != nil {
+		log.Error().Err(err).Str("username", createdUser.Username).Msg("[Goroutine] Failed to create verify_email record in DB.")
+		return
+	}
+	log.Info().Str("username", createdUser.Username).Int64("verify_email_id", verifyEmailEntry.ID).Msg("[Goroutine] verify_email record created successfully.")
+
+	subject := "Welcome to Simple Bank"
+	verifyUrl := fmt.Sprintf("%s/users/verify_email?email_id=%d&secret_code=%s",
+		server.config.FrontendBaseURL, // Accessing via server struct
+		verifyEmailEntry.ID,
+		verifyEmailEntry.SecretCode)
+
+	content := fmt.Sprintf(`Hello %s,<br/>
+Thank you for registering with us!<br/>
+Please <a href="%s">click here</a> to verify your email address.<br/>
+`, createdUser.FullName, verifyUrl)
+	to := []string{createdUser.Email}
+
+	err = server.mailer.SendEmail(subject, content, to, nil, nil, nil) // Accessing via server struct
+	if err != nil {
+		log.Error().Err(err).Str("username", createdUser.Username).Msg("[Goroutine] Failed to send verification email.")
+		return
+	}
+	log.Info().Str("username", createdUser.Username).Str("email", createdUser.Email).Msg("[Goroutine] Verification email sent successfully.")
 }
 
 func (server *Server) createUser(ctx *gin.Context) {
@@ -72,30 +108,17 @@ func (server *Server) createUser(ctx *gin.Context) {
 		return
 	}
 
-	arg := db.CreateUserTxParams{ // 【修改】参数类型变化
-		// CreateUserParams 嵌入在 CreateUserTxParams 中 (内容和你原来填充 arg 的方式一样)
+	arg := db.CreateUserTxParams{
 		CreateUserParams: db.CreateUserParams{
 			Username:       req.Username,
 			HashedPassword: hashedPassword,
 			FullName:       req.FullName,
 			Email:          req.Email,
 		},
-		// 【新增】定义 AfterCreate 回调函数
 		AfterCreate: func(user db.User) error {
-
-			taskPayload := &worker.PayloadSendVerifyEmail{
-				Username: user.Username,
-			}
-
-			opts := []asynq.Option{
-				asynq.MaxRetry(5),
-				asynq.ProcessIn(10 * time.Second),
-				asynq.Queue(worker.QueueCritical),
-			}
-
-			log.Info().Str("username", user.Username).Msg("enqueuing task to send verification email")
-
-			return server.taskDistributor.DistributeTaskSendVerifyEmail(ctx, taskPayload, opts...)
+			log.Info().Str("username", user.Username).Msg("User created successfully. Scheduling async email verification.")
+			go server.sendVerificationEmailAsync(user)
+			return nil
 		},
 	}
 
@@ -104,7 +127,6 @@ func (server *Server) createUser(ctx *gin.Context) {
 		if pqErr, ok := err.(*pq.Error); ok {
 			switch pqErr.Code.Name() {
 			case "unique_violation":
-
 				ctx.JSON(http.StatusConflict, errorResponse(fmt.Errorf("username or email already exists")))
 				return
 			}
