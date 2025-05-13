@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/AutomaticOrca/simplebank/mail"
-	"github.com/rs/zerolog/log"
 	"net/http"
 	"time"
+
+	"github.com/AutomaticOrca/simplebank/mail"
+	"github.com/rs/zerolog/log"
 
 	db "github.com/AutomaticOrca/simplebank/db/sqlc"
 	"github.com/AutomaticOrca/simplebank/token"
@@ -40,7 +41,9 @@ func NewServer(config util.Config, store db.Store, mailer mail.EmailSender) (*Se
 	}
 
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
-		v.RegisterValidation("currency", validCurrency)
+		if err := v.RegisterValidation("currency", validCurrency); err != nil {
+			return nil, fmt.Errorf("cannot register currency validator: %w", err)
+		}
 	}
 
 	server.setupRouter()
