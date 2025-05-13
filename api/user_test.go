@@ -2,7 +2,7 @@ package api
 
 import (
 	"bytes"
-	"database/sql" // <<< ADDED: Needed for sql.ErrConnDone in error case
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -18,7 +18,7 @@ import (
 	"github.com/AutomaticOrca/simplebank/util"
 	"github.com/gin-gonic/gin"
 	"github.com/golang/mock/gomock"
-	"github.com/lib/pq" // <<< ADDED: For simulating pq.Error unique violation
+	"github.com/lib/pq"
 	"github.com/stretchr/testify/require"
 )
 
